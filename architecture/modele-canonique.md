@@ -115,6 +115,7 @@ Les erreurs metier des partenaires sont ramenees a un seul format :
 |---|---|
 | OFFER_NOT_AVAILABLE | exception CORBA `NotAvailable`, SOAP Fault de hold/confirm, refus autopartage |
 | PROVIDER_UNAVAILABLE | partenaire injoignable, timeout, circuit ouvert |
+| INVALID_REQUEST | parametres invalides (date, offerId d'un autre mode...) |
 
 ## 4. Correspondances
 

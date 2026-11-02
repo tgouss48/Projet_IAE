@@ -34,6 +34,22 @@ services:
     ports:
       - "8081:8080"          # WSDL: http://localhost:8081/ws/air.wsdl
 
+  # ===================== Plateforme (equipe) =====================
+
+  # --- Bridge CORBA -> REST ---
+  rail-bridge:
+    build: ./bridges/rail-bridge
+    image: mobilite/rail-bridge:0.1.0
+    container_name: rail-bridge
+    environment:
+      IOR_FILE: /ior/RailBooking.ior
+    volumes:
+      - ./ior:/ior:ro
+    ports:
+      - "8091:8080"
+    depends_on:
+      - rail
+
 networks:
   default:
     name: mobilite-net
