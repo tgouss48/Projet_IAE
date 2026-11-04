@@ -62,6 +62,38 @@ services:
     depends_on:
       - air
 
+  # --- Microservice autopartage + sa base ---
+  carsharing-db:
+    image: postgres:15-alpine
+    container_name: carsharing-db
+    environment:
+      POSTGRES_DB: carsharing
+      POSTGRES_USER: carsharing
+      POSTGRES_PASSWORD: carsharing
+    volumes:
+      - carsharing-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U carsharing -d carsharing"]
+      interval: 5s
+      retries: 10
+
+  carsharing-service:
+    build: ./services/carsharing-service
+    image: mobilite/carsharing-service:0.1.0
+    container_name: carsharing-service
+    environment:
+      DB_URL: jdbc:postgresql://carsharing-db:5432/carsharing
+      DB_USER: carsharing
+      DB_PASSWORD: carsharing
+    ports:
+      - "8093:8080"
+    depends_on:
+      carsharing-db:
+        condition: service_healthy
+
+volumes:
+  carsharing-data:
+
 networks:
   default:
     name: mobilite-net
