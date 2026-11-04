@@ -50,6 +50,18 @@ services:
     depends_on:
       - rail
 
+  # --- Bridge SOAP -> REST ---
+  air-bridge:
+    build: ./bridges/air-bridge
+    image: mobilite/air-bridge:0.1.0
+    container_name: air-bridge
+    environment:
+      AIR_URL: http://air:8080/ws
+    ports:
+      - "8092:8080"
+    depends_on:
+      - air
+
 networks:
   default:
     name: mobilite-net
