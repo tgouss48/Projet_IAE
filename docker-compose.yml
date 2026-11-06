@@ -91,8 +91,38 @@ services:
       carsharing-db:
         condition: service_healthy
 
+  # --- Microservice tarification + sa base ---
+  pricing-db:
+    image: postgres:15-alpine
+    container_name: pricing-db
+    environment:
+      POSTGRES_DB: pricing
+      POSTGRES_USER: pricing
+      POSTGRES_PASSWORD: pricing
+    volumes:
+      - pricing-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pricing -d pricing"]
+      interval: 5s
+      retries: 10
+
+  pricing-service:
+    build: ./services/pricing-service
+    image: mobilite/pricing-service:0.1.0
+    container_name: pricing-service
+    environment:
+      DB_URL: jdbc:postgresql://pricing-db:5432/pricing
+      DB_USER: pricing
+      DB_PASSWORD: pricing
+    ports:
+      - "8094:8080"
+    depends_on:
+      pricing-db:
+        condition: service_healthy
+
 volumes:
   carsharing-data:
+  pricing-data:
 
 networks:
   default:
