@@ -11,6 +11,10 @@ spring:
           uri: ${PRICING_URL:http://pricing-service:8080}
           predicates:
             - Path=/api/v1/quotes/**
+        - id: bookings
+          uri: ${BOOKING_URL:http://booking-service:8080}
+          predicates:
+            - Path=/api/v1/bookings/**
 
 gateway:
   # cle HMAC de signature des tokens (32 caracteres minimum)

@@ -120,6 +120,63 @@ services:
       pricing-db:
         condition: service_healthy
 
+  # --- Bus d'evenements (Kafka en mode KRaft, sans Zookeeper) ---
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      retries: 12
+
+  # --- Microservice reservations (orchestrateur de saga) + sa base ---
+  booking-db:
+    image: postgres:15-alpine
+    container_name: booking-db
+    environment:
+      POSTGRES_DB: booking
+      POSTGRES_USER: booking
+      POSTGRES_PASSWORD: booking
+    volumes:
+      - booking-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking -d booking"]
+      interval: 5s
+      retries: 10
+
+  booking-service:
+    build: ./services/booking-service
+    image: mobilite/booking-service:0.1.0
+    container_name: booking-service
+    environment:
+      DB_URL: jdbc:postgresql://booking-db:5432/booking
+      DB_USER: booking
+      DB_PASSWORD: booking
+      KAFKA_BOOTSTRAP: kafka:9092
+      PRICING_URL: http://pricing-service:8080
+      RAIL_BRIDGE_URL: http://rail-bridge:8080
+      AIR_BRIDGE_URL: http://air-bridge:8080
+      CARSHARING_URL: http://carsharing-service:8080
+    ports:
+      - "8095:8080"
+    depends_on:
+      booking-db:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
   # --- API Gateway / BFF : seul point d'entree du client ---
   gateway:
     build: ./gateway
@@ -131,9 +188,11 @@ services:
       AIR_BRIDGE_URL: http://air-bridge:8080
       CARSHARING_URL: http://carsharing-service:8080
       PRICING_URL: http://pricing-service:8080
+      BOOKING_URL: http://booking-service:8080
     ports:
       - "8080:8080"
     depends_on:
+      - booking-service
       - rail-bridge
       - air-bridge
       - carsharing-service
@@ -142,6 +201,7 @@ services:
 volumes:
   carsharing-data:
   pricing-data:
+  booking-data:
 
 networks:
   default:
