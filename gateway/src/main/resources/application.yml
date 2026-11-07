@@ -1,0 +1,33 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      routes:
+        - id: pricing
+          uri: ${PRICING_URL:http://pricing-service:8080}
+          predicates:
+            - Path=/api/v1/quotes/**
+
+gateway:
+  # cle HMAC de signature des tokens (32 caracteres minimum)
+  jwt-secret: ${JWT_SECRET:dev-secret-a-changer-en-production-0123456789}
+  token-ttl: PT1H
+  # comptes de demonstration
+  users:
+    demo: demo123
+    alice: alice123
+  search-timeout: PT5S
+  services:
+    rail: ${RAIL_BRIDGE_URL:http://rail-bridge:8080}
+    air: ${AIR_BRIDGE_URL:http://air-bridge:8080}
+    carsharing: ${CARSHARING_URL:http://carsharing-service:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

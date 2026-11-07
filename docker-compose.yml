@@ -120,6 +120,25 @@ services:
       pricing-db:
         condition: service_healthy
 
+  # --- API Gateway / BFF : seul point d'entree du client ---
+  gateway:
+    build: ./gateway
+    image: mobilite/gateway:0.1.0
+    container_name: gateway
+    environment:
+      JWT_SECRET: mobilite-secret-de-demo-0123456789abcdef
+      RAIL_BRIDGE_URL: http://rail-bridge:8080
+      AIR_BRIDGE_URL: http://air-bridge:8080
+      CARSHARING_URL: http://carsharing-service:8080
+      PRICING_URL: http://pricing-service:8080
+    ports:
+      - "8080:8080"
+    depends_on:
+      - rail-bridge
+      - air-bridge
+      - carsharing-service
+      - pricing-service
+
 volumes:
   carsharing-data:
   pricing-data:
